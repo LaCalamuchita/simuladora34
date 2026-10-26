@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F5F2">
+<meta name="description" content="Simulá tu cuota en menos de 1 minuto. Unidades disponibles en Tigre y Saavedra.">
+<meta property="og:title" content="Simulá tu cuota · Area 34">
+<meta property="og:description" content="Elegí qué estás buscando y mirá cuánto pagarías por mes.">
+<meta property="og:type" content="website">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Simulador Area 34</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna móvil (máx. 460px), una pregunta por pantalla, botón principal fijo abajo, al alcance del pulgar.
+   Colores: los mismos del documento de estilo de los videos. El acento naranja se usa en UN solo elemento por pantalla. */
+:root{
+  --bg:#F6F5F2;        /* Niebla: fondo */
+  --surface:#FFFFFF;   /* Papel: tarjetas */
+  --ink:#111111;       /* Tinta: texto y botones */
+  --muted:#6E6C66;     /* Apagado: texto secundario */
+  --line:#E2E0DA;      /* Línea: bordes y divisores */
+  --accent:#C65A3A;    /* Acento: la cuota */
+  --on-ink:#FFFFFF;    /* Texto sobre botones negros */
+  --error:#A8322A;
+  --font:"Jost","Futura","Futura PT","Century Gothic","Avenir Next",system-ui,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#121211;--surface:#1C1B1A;--ink:#F2F1ED;--muted:#A19F98;--line:#302F2C;--accent:#E07C5A;--on-ink:#121211;--error:#F2A59C;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#121211;--surface:#1C1B1A;--ink:#F2F1ED;--muted:#A19F98;--line:#302F2C;--accent:#E07C5A;--on-ink:#121211;--error:#F2A59C;color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-tap-highlight-color:transparent}
+*,*::before,*::after{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:6px}
+
+#app{max-width:460px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+
+/* Encabezado */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-template-columns:44px 1fr 44px;align-items:center;height:56px}
+.icon-btn{width:44px;height:44px;display:grid;place-items:center;border:0;background:none;border-radius:50%;cursor:pointer;color:var(--ink);transition:opacity .3s}
+.icon-btn[hidden]{display:grid!important;visibility:hidden}
+.wordmark{justify-self:center;font-weight:500;font-size:14px;letter-spacing:.32em;padding-left:.32em}
+.counter{justify-self:end;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.progress{height:2px;background:var(--line);border-radius:2px;overflow:hidden;transition:opacity .4s}
+.progress i{display:block;height:100%;width:0;background:var(--ink);transition:width .6s var(--ease)}
+
+/* Pantallas */
+main{flex:1;padding-block:32px 24px}
+.screen{display:flex;flex-direction:column;gap:22px}
+.screen>*{animation:enter .6s var(--ease) both;animation-delay:calc(var(--i,0) * 55ms)}
+.screen.leaving>*{animation:leave .2s ease-in both}
+@keyframes enter{from{opacity:0;transform:translateY(10px);filter:blur(5px)}to{opacity:1;transform:none;filter:none}}
+@keyframes leave{to{opacity:0;transform:translateY(-6px)}}
+
+.eyebrow{margin:0;font-size:12px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{margin:0;font-weight:500;text-wrap:balance}
+h1{font-size:clamp(34px,10vw,44px);line-height:1.04;letter-spacing:-.015em}
+h2{font-size:clamp(27px,7.6vw,32px);line-height:1.1;letter-spacing:-.01em}
+h1:focus,h2:focus{outline:none}
+.lead{margin:0;color:var(--muted);font-size:17px;max-width:34ch}
+.fine{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5}
+
+/* Barra inferior con el botón principal */
+.bar{position:sticky;bottom:0;z-index:5;padding-block:14px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--bg) 72%,transparent)}
+.bar:empty{display:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:56px;border:0;border-radius:999px;background:var(--ink);color:var(--on-ink);
+  font-weight:500;font-size:17px;letter-spacing:.01em;text-decoration:none;cursor:pointer;transition:transform .2s var(--ease),opacity .3s}
+.btn:active{transform:scale(.98)}
+.btn[aria-disabled="true"]{opacity:.35;pointer-events:none}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn svg{flex:none}
+.textlink{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line);cursor:pointer;font-size:15px}
+
+/* Bienvenida: un edificio por proyecto, una ventana encendida por unidad disponible */
+.skyline{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;padding-top:6px}
+.bldg{display:flex;flex-direction:column;gap:10px;min-width:0}
+.bldg .facade{display:grid;grid-template-columns:repeat(var(--cols),12px);gap:6px;padding:10px;border:1px solid var(--ink);border-bottom-width:2px;width:max-content}
+.bldg .facade i{width:12px;height:16px;background:var(--accent);animation:lit .5s var(--ease) both;animation-delay:calc(300ms + var(--d) * 45ms)}
+@keyframes lit{from{opacity:0;transform:scaleY(.3)}to{opacity:1;transform:none}}
+.bldg b{display:block;font-weight:500;font-size:14px}
+.bldg span{display:block;font-size:13px;color:var(--muted)}
+.assure{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:0;list-style:none;font-size:14px;color:var(--muted)}
+.assure li{display:flex;align-items:center;gap:6px}
+.assure li::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--muted)}
+.demo{align-self:flex-start;font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:5px 12px}
+
+/* Opciones (tiles) */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-height:118px;padding:16px;text-align:left;cursor:pointer;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:background .3s,color .3s,border-color .3s,transform .2s var(--ease)}
+.tile:active{transform:scale(.98)}
+.tile.wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start}
+.tile .glyph{color:var(--ink);transition:color .3s}
+.tile .t-name{display:block;font-weight:500;font-size:17px;line-height:1.2}
+.tile .t-meta{display:block;font-size:13px;color:var(--muted);margin-top:3px;transition:color .3s}
+.tile[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.tile[aria-pressed="true"] .glyph{color:var(--on-ink)}
+.tile[aria-pressed="true"] .t-meta{color:var(--on-ink);opacity:.7}
+
+/* Valor grande + slider */
+.value{display:flex;flex-direction:column;gap:6px}
+.big{position:relative;display:flex;align-items:baseline;gap:10px;font-size:clamp(46px,14vw,58px);font-weight:500;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.big .cur{font-size:.36em;letter-spacing:.04em;color:var(--muted)}
+.big input{border:0;background:none;padding:0;margin:0;font-size:1em;font-weight:500;letter-spacing:-.02em;width:6ch;min-width:2ch;font-variant-numeric:tabular-nums;
+  border-bottom:1px dashed var(--line);border-radius:0}
+.big input:focus{outline:none;border-bottom-color:var(--ink)}
+.sub{margin:0;color:var(--muted);font-size:15px}
+.sub b{color:var(--ink);font-weight:500}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:40px;margin:0;background:transparent;cursor:pointer;--p:50%}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--ink) var(--p),var(--line) var(--p))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-13px;border-radius:50%;background:var(--surface);border:1.5px solid var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.14);transition:transform .2s var(--ease)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:4px;background:var(--ink)}
+input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--surface);border:1.5px solid var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.14)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--ink);outline-offset:3px}
+.scale{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:-4px}
+
+/* Resultado */
+.hero{display:grid;gap:18px;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.hero .u-title{display:block;font-weight:500;font-size:16px}
+.hero .u-meta{display:block;font-size:14px;color:var(--muted)}
+.cuota{color:var(--accent);font-size:clamp(50px,15vw,64px);font-weight:500;letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:10px}
+.cuota .cur{font-size:.32em;letter-spacing:.04em}
+.per{margin:6px 0 0;color:var(--muted);font-size:15px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;padding-top:16px;border-top:1px solid var(--line)}
+.facts dt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-weight:500;font-size:15px;font-variant-numeric:tabular-nums}
+.note{margin:0;font-size:13.5px;color:var(--muted);padding:10px 12px;border-radius:10px;background:var(--bg)}
+
+.adjust{display:grid;gap:14px}
+.ctl{display:grid;gap:2px}
+.ctl-head{display:flex;justify-content:space-between;align-items:baseline;font-size:15px}
+.ctl-head output{font-weight:500;font-variant-numeric:tabular-nums}
+.alts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.alt{display:grid;gap:2px;padding:10px 12px;text-align:left;cursor:pointer;background:transparent;border:1px solid var(--line);border-radius:12px;transition:border-color .3s,background .3s}
+.alt span{font-size:12.5px;color:var(--muted)}
+.alt b{font-weight:500;font-size:15px;font-variant-numeric:tabular-nums}
+.alt[aria-pressed="true"]{border-color:var(--ink);background:var(--surface)}
+
+details.detail{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+details.detail summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:16px 0;cursor:pointer;font-size:15px}
+details.detail summary::-webkit-details-marker{display:none}
+details.detail summary svg{transition:transform .3s var(--ease)}
+details.detail[open] summary svg{transform:rotate(180deg)}
+.rows{margin:0 0 14px}
+.rows div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:14.5px}
+.rows div+div{border-top:1px solid var(--line)}
+.rows dt{color:var(--muted)}
+.rows dd{margin:0;font-weight:500;font-variant-numeric:tabular-nums;text-align:right}
+
+.others{display:grid;gap:10px}
+.units{display:grid;gap:8px}
+.unit{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;align-items:center;padding:14px 16px;text-align:left;cursor:pointer;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:border-color .3s,box-shadow .3s}
+.unit .n{font-weight:500}
+.unit .m{grid-column:1;font-size:13.5px;color:var(--muted)}
+.unit .c{grid-column:2;grid-row:1/span 2;text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.unit .c small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.unit[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.hero.swap{animation:swap .5s var(--ease)}
+@keyframes swap{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Captura */
+.summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.summary .s-unit{font-size:14px;color:var(--muted);min-width:0}
+.summary .s-unit b{display:block;color:var(--ink);font-weight:500;font-size:15px}
+.summary .s-cuota{font-weight:500;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.field{display:grid;gap:6px}
+.field label{font-size:14px;color:var(--muted)}
+.field input{height:54px;padding:0 16px;font-size:17px;background:var(--surface);border:1px solid var(--line);border-radius:12px;transition:border-color .2s}
+.field input:focus{outline:none;border-color:var(--ink)}
+.field input[aria-invalid="true"]{border-color:var(--error)}
+.err{margin:0;font-size:13.5px;color:var(--error)}
+.seg{display:grid;grid-template-columns:1fr 1fr;padding:4px;gap:4px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.seg button{height:44px;border:0;border-radius:999px;background:transparent;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .3s,color .3s}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.help{margin:0;font-size:14px;color:var(--muted)}
+
+/* Gracias */
+.file{display:flex;align-items:center;gap:14px;padding:16px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:border-color .3s}
+.file:hover{border-color:var(--ink)}
+.file b{display:block;font-weight:500}
+.file small{display:block;font-size:13px;color:var(--muted)}
+.check{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--ink)}
+.check path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .7s .25s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.next{display:grid;gap:8px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.next h3{font-size:22px}
+.next p{margin:0;color:var(--muted)}
+.links{display:flex;flex-wrap:wrap;gap:10px 22px}
+.loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
+}
+@media (min-width:600px){ main{padding-block:56px 32px} }
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <button class="icon-btn" id="back" type="button" aria-label="Volver" hidden>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="wordmark" aria-label="Area 34">AREA 34</span>
+    <span class="counter" id="counter" aria-live="polite"></span>
+  </header>
+  <div class="progress" id="progress" aria-hidden="true"><i></i></div>
+  <main id="stage" tabindex="-1"></main>
+  <div class="bar" id="bar"></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   1. CONEXIÓN CON GOOGLE SHEETS (lo único técnico que hay que tocar)
+   Google Sheets → Archivo → Compartir → Publicar en la web → elegir la
+   pestaña → formato "Valores separados por comas (.csv)" → Publicar.
+   Pegá acá los dos links. Si quedan vacíos, se usan datos de ejemplo.
+   ===================================================================== */
+const CONEXION = {
+  UNIDADES_CSV: '',   // link CSV de la pestaña "Unidades"
+  CONFIG_CSV:   '',   // link CSV de la pestaña "Config"
+  PROYECTOS_CSV: '',  // link CSV de la pestaña "Proyectos" (código para el bot y PDF de cada obra)
+  LEADS_URL:    '',   // opcional: URL del Apps Script que guarda los contactos
+};
+
+/* =====================================================================
+   2. VALORES POR DEFECTO. La pestaña "Config" del Sheet los reemplaza.
+   ===================================================================== */
+const DEFAULTS = {
+  moneda: 'USD',
+  metodo: 'directo',          // 'directo' (igual que el Excel) o 'frances'
+  tasa_anual: 0.07,           // Tasa de interés anual
+  recargo_anual: 0.05,        // "Alquiler" del Excel. Se suma a la tasa y no se muestra por separado
+  anticipo_min_pct: 0.20,     // Anticipo mínimo (% del precio)
+  anticipo_max_pct: 0.80,     // Anticipo máximo que ofrece el slider
+  anticipo_sugerido_pct: 0.30,// Valor inicial del slider
+  plazo_min: 12,              // En meses
+  plazo_max: 72,
+  plazo_paso: 6,
+  plazo_sugerido: 48,
+  mostrar_tasas: 'si',        // 'si' o 'no': muestra TNA y TEA en el detalle
+  whatsapp: '5491131380123',  // Sin +, sin espacios
+  agenda_url: '',             // Link a Calendly / Google Calendar. Si está vacío, se agenda por WhatsApp
+  web_url: 'https://www.area34.com.ar/inicio',
+  app_url: '',                // URL pública del simulador (para el link dentro del WhatsApp)
+  empresa: 'Area 34',
+  whatsapp_bot: 'no',         // 'si' cuando el bot de WhatsApp esté andando (cambia lo que se le promete a la persona)
+};
+
+/* =====================================================================
+   3. TEXTOS. Cambialos libremente. {llaves} = valores que se completan solos.
+   ===================================================================== */
+const TEXTOS = {
+  bienvenida: {
+    eyebrow: 'Simulador de cuotas',
+    titulo: 'Simulá tu cuota en menos de 1 minuto.',
+    bajada: 'Elegí qué estás buscando y te mostramos cuánto pagarías por mes por las unidades disponibles hoy.',
+    garantias: ['Sin registrarte', 'Cuotas fijas en {moneda}', 'Unidades reales'],
+    cta: 'Simular mi cuota',
+  },
+  tipo:     { titulo: '¿Qué estás buscando?', bajada: 'Elegí una opción.', nose: 'Todavía no lo sé', nose_meta: 'Mostrame todo' },
+  zona:     { titulo: '¿Dónde te imaginás?', igual: 'Me da igual', igual_meta: 'Ver todas las zonas' },
+  uso:      { titulo: '¿Para qué lo pensás?', opciones: [
+              { id: 'vivir',     nombre: 'Para vivir',       meta: 'Mi próximo hogar' },
+              { id: 'inversion', nombre: 'Como inversión',   meta: 'Renta o revalorización' },
+              { id: 'familiar',  nombre: 'Para un familiar', meta: 'Hijos, padres, alguien cercano' } ] },
+  anticipo: { titulo: '¿Con cuánto podrías arrancar?', bajada: 'Es el anticipo. Lo que no pongas ahora, lo pagás en cuotas.' },
+  plazo:    { titulo: '¿En cuánto tiempo te gustaría terminar de pagarlo?', cta: 'Ver mi cuota' },
+  resultado: {
+    eyebrow: 'Tu simulación',
+    titulos: { vivir: 'Tu próximo hogar, en cuotas fijas.', inversion: 'Tu inversión, en cuotas fijas.', familiar: 'Un lugar para los tuyos, en cuotas fijas.', otro: 'Así podrías pagarlo.' },
+    cta: 'Pedir información de esta unidad',
+    legal: 'Simulación orientativa en {moneda}. No constituye una oferta ni una aprobación de financiación. Precios y disponibilidad sujetos a cambios. Cuotas calculadas con {metodo}.',
+  },
+  captura: {
+    eyebrow: 'Último paso',
+    titulo: '¿Te mandamos la ficha de {proyecto} y tu simulación?',
+    ayuda_wa: 'Se abre WhatsApp con tu consulta lista para enviar. Te respondemos con la ficha de la obra y tu simulación.',
+    ayuda_wa_bot: 'Se abre WhatsApp con tu consulta lista para enviar. Te llega al instante la ficha de la obra en PDF y, si querés, te atiende un asesor.',
+    ayuda_mail: 'Te llega la ficha de la obra, tu simulación y las otras unidades que coinciden con lo que buscás.',
+    privacidad: 'Usamos tus datos solo para enviarte esta información.',
+    cta: 'Pedir información',
+  },
+  gracias: {
+    titulo: 'Listo, {nombre}.',
+    texto_wa: 'Enviá el mensaje que se abrió en WhatsApp y te respondemos con la ficha de la obra y tu simulación.',
+    texto_wa_bot: 'Enviá el mensaje que se abrió en WhatsApp: te llega al instante la ficha de la obra en PDF.',
+    ficha: 'Mientras tanto, mirá la ficha de {proyecto}',
+    texto_mail: 'Te enviamos la simulación a {email}. Si no la ves, revisá promociones o spam.',
+    proximo_titulo: 'Hablemos 15 minutos',
+    proximo_texto: 'Te mostramos planos, fechas de entrega y armamos un plan de pagos a tu medida.',
+    cta: 'Agendar una llamada',
+  },
+  // La última línea ("Código: …") es la palabra clave que lee el bot de WhatsApp. No la saques.
+  whatsapp: 'Hola {empresa}! Soy {nombre}.\nQuiero más información sobre {proyecto} · {unidad} ({tipologia}).\nSimulé un anticipo de {anticipo} y {plazo} cuotas de {cuota}.',
+  whatsapp_agenda: 'Hola {empresa}! Soy {nombre}. Quiero hablar con un asesor sobre {proyecto} · {unidad}.',
+  codigo_asesor: 'ASESOR',     // palabra clave que hace que el bot pase la conversación a una persona
+};
+
+/* =====================================================================
+   4. DATOS DE EJEMPLO (se usan solo si no hay Sheet conectado)
+   ===================================================================== */
+const DEMO = [
+  ['AJ-1A','Area Joven','Tigre','1º A','Monoambiente',34,72000,'Dic 2027'],
+  ['AJ-1C','Area Joven','Tigre','1º C','Monoambiente',36,76000,'Dic 2027'],
+  ['AJ-3A','Area Joven','Tigre','3º A','Monoambiente',35,79000,'Dic 2027'],
+  ['AJ-2B','Area Joven','Tigre','2º B','1 dormitorio',45,94000,'Dic 2027'],
+  ['AJ-3B','Area Joven','Tigre','3º B','1 dormitorio',47,99000,'Dic 2027'],
+  ['AJ-4B','Area Joven','Tigre','4º B','1 dormitorio',48,104000,'Dic 2027'],
+  ['AJ-C08','Area Joven','Tigre','Cochera 08','Cochera',12.5,22000,'Dic 2027'],
+  ['RN-2C','Rómulo Naón 3720','Saavedra','2º C','Monoambiente',31,86000,'Jun 2028'],
+  ['RN-4C','Rómulo Naón 3720','Saavedra','4º C','Monoambiente',32,90000,'Jun 2028'],
+  ['RN-2A','Rómulo Naón 3720','Saavedra','2º A','1 dormitorio',42,118000,'Jun 2028'],
+  ['RN-3B','Rómulo Naón 3720','Saavedra','3º B','1 dormitorio',44,124000,'Jun 2028'],
+  ['RN-7A','Rómulo Naón 3720','Saavedra','7º A','1 dormitorio',46,133000,'Jun 2028'],
+].map(([id,proyecto,zona,unidad,tipologia,m2,precio,entrega]) => ({id,proyecto,zona,unidad,tipologia,m2,precio,entrega}));
+
+const DEMO_PROYECTOS = [
+  { proyecto: 'Area Joven', codigo: 'SANTAMARIA', ficha: 'https://drive.google.com/file/d/1A42uah_rXSfe5MUol9z_HhQC_GWaFjmT/view', web: 'https://www.area34.com.ar/santa_maria-2229-tigre' },
+  { proyecto: 'Rómulo Naón 3720', codigo: 'NAON', ficha: 'https://drive.google.com/file/d/1PZbyt-EqOUFv0bzPnA8veqJ--8BSakxg/view', web: 'https://www.area34.com.ar/romulo-naon-3720-caba' },
+];
+
+/* ===================================================================== */
+/* De acá para abajo es la lógica. No hace falta tocarla.                */
+/* ===================================================================== */
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const nf = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
+const pf = v => (v * 100).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fill = (t, o) => String(t).replace(/\{(\w+)\}/g, (_, k) => o[k] ?? '');
+
+let cfg = { ...DEFAULTS };
+let units = [];
+let demo = true;
+let proyectos = new Map();   // norm(proyecto) → { codigo, ficha, web }
+let ready = false;
+const money = v => `${cfg.moneda} ${nf.format(Math.round(v))}`;
+
+const S = { step: 'bienvenida', hist: [], tipo: null, zona: null, uso: null, anticipo: null, plazo: null, unitId: null,
+            nombre: '', canal: 'whatsapp', email: '', origen: '' };
+
+/* ---------- Lectura de datos ---------- */
+function parseCSV(t) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && t[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ''));
+}
+// Acepta "USD 100.000", "100000", "100,000", "7%", "0,07"
+function parseNum(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').trim(); if (!s) return NaN;
+  const isPct = s.includes('%');
+  s = s.replace(/[^\d.,-]/g, '');
+  const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+  if (lc > -1 && ld > -1) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (lc > -1 || ld > -1) {
+    const sep = lc > -1 ? ',' : '.'; const p = s.split(sep);
+    const decimal = p.length === 2 && (p[1].length !== 3 || /^-?0$/.test(p[0]));
+    s = decimal ? p.join('.') : p.join('');
+  }
+  let n = parseFloat(s); if (isPct) n /= 100; return n;
+}
+const key = h => norm(h).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const ALIAS = { tipo: 'tipologia', precio_usd: 'precio', m2_totales: 'm2', superficie: 'm2', sup: 'm2', metros: 'm2', barrio: 'zona', depto: 'unidad', departamento: 'unidad', disponible: 'estado', pdf: 'ficha', brochure: 'ficha', brochure_url: 'ficha', ficha_pdf: 'ficha', link: 'web', web_url: 'web', palabra_clave: 'codigo', keyword: 'codigo' };
+const RATE_KEYS = ['tasa_anual', 'recargo_anual', 'anticipo_min_pct', 'anticipo_max_pct', 'anticipo_sugerido_pct'];
+const NUM_KEYS = [...RATE_KEYS, 'plazo_min', 'plazo_max', 'plazo_paso', 'plazo_sugerido'];
+const asRate = n => (isFinite(n) && n >= 1 ? n / 100 : n);  // "7" en el Sheet = 7%
+const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function toUnits(rows) {
+  const head = rows[0].map(h => ALIAS[key(h)] || key(h));
+  return rows.slice(1).map((r, i) => {
+    const o = {}; head.forEach((h, j) => o[h] = (r[j] ?? '').trim());
+    const u = { ...o, precio: parseNum(o.precio), m2: parseNum(o.m2),
+      tasa_anual: asRate(parseNum(o.tasa_anual)), recargo_anual: asRate(parseNum(o.recargo_anual)),
+      anticipo_min_pct: asRate(parseNum(o.anticipo_min_pct)), plazo_max: parseNum(o.plazo_max) };
+    u.id = o.id || slug(`${o.proyecto}-${o.unidad}`) || 'u' + i;
+    return u;
+  }).filter(u => isFinite(u.precio) && u.precio > 0 && u.tipologia &&
+                 (!u.estado || ['disponible', 'si', 'sí', 'libre', 'x', 'true'].includes(norm(u.estado))));
+}
+function toRows(rows) {
+  const head = rows[0].map(h => ALIAS[key(h)] || key(h));
+  return rows.slice(1).map(r => { const o = {}; head.forEach((h, j) => o[h] = (r[j] ?? '').trim()); return o; });
+}
+function setProyectos(list) { list.forEach(p => p.proyecto && proyectos.set(norm(p.proyecto), p)); }
+// Datos de la obra: primero la fila de la unidad, después la pestaña Proyectos
+function obra(u) {
+  const p = proyectos.get(norm(u.proyecto)) || {};
+  const codigo = (u.codigo || p.codigo || slug(u.proyecto).replace(/-/g, '')).toUpperCase();
+  return { codigo, ficha: u.ficha || p.ficha || '', web: u.web || p.web || cfg.web_url };
+}
+function applyConfig(rows) {
+  rows.slice(1).forEach(([k, v]) => {
+    const kk = key(k); if (!kk || !(kk in DEFAULTS) || v == null || String(v).trim() === '') return;
+    if (NUM_KEYS.includes(kk)) { let n = parseNum(v); if (RATE_KEYS.includes(kk)) n = asRate(n); if (isFinite(n)) cfg[kk] = n; }
+    else cfg[kk] = String(v).trim();
+  });
+  cfg.metodo = norm(cfg.metodo).startsWith('fran') ? 'frances' : 'directo';
+  cfg.whatsapp = String(cfg.whatsapp).replace(/\D/g, '');
+}
+async function getCSV(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return parseCSV(await r.text());
+}
+async function load() {
+  try {
+    if (CONEXION.CONFIG_CSV) applyConfig(await getCSV(CONEXION.CONFIG_CSV));
+    if (CONEXION.PROYECTOS_CSV) setProyectos(toRows(await getCSV(CONEXION.PROYECTOS_CSV)));
+    if (CONEXION.UNIDADES_CSV) {
+      const u = toUnits(await getCSV(CONEXION.UNIDADES_CSV));
+      if (u.length) { units = u; demo = false; }
+    }
+  } catch (e) { console.warn('No se pudo leer el Google Sheet, uso datos de ejemplo.', e); }
+  if (demo) units = DEMO.map(u => ({ ...u }));
+  if (!proyectos.size && demo) setProyectos(DEMO_PROYECTOS);
+  ready = true;
+}
+
+/* ---------- Cálculo (replica el Excel) ---------- */
+const num = (v, d) => (isFinite(v) ? v : d);
+const rules = u => ({ tasa: num(u.tasa_anual, cfg.tasa_anual) + num(u.recargo_anual, cfg.recargo_anual),
+                      minPct: num(u.anticipo_min_pct, cfg.anticipo_min_pct), maxN: num(u.plazo_max, cfg.plazo_max) });
+const minA = u => Math.ceil(u.precio * rules(u).minPct / 100) * 100;
+const maxA = u => Math.max(minA(u), Math.floor(u.precio * cfg.anticipo_max_pct / 1000) * 1000);
+function irr(P, c, n) {         // tasa mensual efectiva equivalente
+  if (c * n <= P) return 0;
+  let lo = 0, hi = 1;
+  for (let k = 0; k < 80; k++) { const m = (lo + hi) / 2; (c * (1 - Math.pow(1 + m, -n)) / m > P) ? lo = m : hi = m; }
+  return (lo + hi) / 2;
+}
+function calc(u, a, n) {
+  const r = rules(u);
+  const A = clamp(a, minA(u), u.precio);
+  const N = Math.min(n, r.maxN);
+  const saldo = u.precio - A, im = r.tasa / 12;
+  let cuota = 0;
+  if (saldo > 0) cuota = cfg.metodo === 'frances'
+      ? (im ? saldo * im / (1 - Math.pow(1 + im, -N)) : saldo / N)
+      : saldo * (1 + im * N) / N;           // Excel: (saldo × (tasa mensual × plazo + 1)) / plazo
+  const pagado = cuota * N, tem = saldo > 0 ? irr(saldo, cuota, N) : 0;
+  return { A, N, saldo, cuota, interes: pagado - saldo, total: pagado + A, tna: r.tasa, tea: Math.pow(1 + tem, 12) - 1,
+           subeA: A > a, bajaN: N < n };
+}
+
+/* ---------- Helpers de dominio ---------- */
+const TIPO_ORDEN = ['monoambiente', '1 dormitorio', '2 dormitorios', '3 dormitorios', '4 dormitorios', 'cochera'];
+const ordTipo = t => { const i = TIPO_ORDEN.findIndex(x => norm(t).startsWith(x.slice(0, 5))); return i < 0 ? 99 : i; };
+const matchT = u => !S.tipo || S.tipo === '*' || u.tipologia === S.tipo;
+const matchZ = u => !S.zona || S.zona === '*' || u.zona === S.zona;
+const pool = () => units.filter(u => matchT(u) && matchZ(u)).sort((a, b) => a.precio - b.precio);
+function groups(list, f) { const m = new Map(); list.forEach(u => { const k = f(u); if (!m.has(k)) m.set(k, []); m.get(k).push(u); }); return m; }
+const zonas = () => [...groups(units.filter(matchT), u => u.zona).keys()].filter(Boolean);
+const m2txt = u => (isFinite(u.m2) && u.m2 > 0 ? ` · ${nf.format(u.m2)} m²` : '');
+const unitName = u => `${u.proyecto} · ${u.unidad}`;
+function years(n) {
+  const y = Math.floor(n / 12), m = n % 12;
+  const ys = y ? `${y} ${y === 1 ? 'año' : 'años'}` : '';
+  const ms = m ? `${m} ${m === 1 ? 'mes' : 'meses'}` : '';
+  return [ys, ms].filter(Boolean).join(' y ');
+}
+function endDate(n) { const d = new Date(); d.setMonth(d.getMonth() + n); return d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }); }
+const step = range => (range > 40000 ? 1000 : 500);
+const plazoMax = list => Math.max(...list.map(u => rules(u).maxN));
+function featured() {
+  const p = pool(); if (!p.length) return null;
+  const sel = p.find(u => u.id === S.unitId); if (sel) return sel;
+  return p.find(u => S.anticipo >= minA(u)) || p[0];
+}
+
+function glyph(t) {
+  const s = '<svg class="glyph" width="34" height="26" viewBox="0 0 34 26" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">';
+  if (norm(t).includes('cochera')) return s + '<rect x="1" y="1" width="32" height="24" rx="1"/><rect x="9" y="6" width="16" height="14" rx="4"/><path d="M12 10h10"/></svg>';
+  const m = norm(t).match(/(\d)/); const rooms = norm(t).startsWith('mono') ? 1 : m ? +m[1] + 1 : 1;
+  let p = '<rect x="1" y="1" width="32" height="24" rx="1"/>';
+  const w = 32 / rooms; for (let i = 1; i < rooms; i++) p += `<path d="M${1 + w * i} 1v${i % 2 ? 16 : 24}"/>`;
+  return s + p + '</svg>';
+}
+const chev = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const waIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.5-.3z"/></svg>';
+
+/* ---------- Navegación ---------- */
+const ORDER = ['bienvenida', 'tipo', 'zona', 'uso', 'anticipo', 'plazo', 'resultado', 'captura', 'gracias'];
+const active = () => ORDER.filter(s => s !== 'zona' || zonas().length > 1);
+const QUESTIONS = () => active().filter(s => !['bienvenida', 'gracias', 'resultado', 'captura'].includes(s));
+
+function go(stepName, push = true) { if (push) S.hist.push(S.step); S.step = stepName; return paint(); }
+function next() { const l = active(); const i = l.indexOf(S.step); return go(l[i + 1]); }
+function back() { const p = S.hist.pop(); if (p) { S.step = p; paint(); } }
+
+async function paint() {
+  const stage = $('#stage'); const cur = $('.screen', stage);
+  if (cur && !reduced) { cur.classList.add('leaving'); await wait(190); }
+  const v = VIEWS[S.step]();
+  stage.innerHTML = v.html;
+  $$('.screen > *', stage).forEach((el, i) => el.style.setProperty('--i', i));
+  $('#bar').innerHTML = v.cta || '';
+  chrome();
+  window.scrollTo({ top: 0 });
+  v.bind && v.bind();
+  const h = $('h1,h2', stage); if (h && S.hist.length) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+}
+function chrome() {
+  const q = QUESTIONS(); const i = q.indexOf(S.step);
+  const l = active(); const k = l.indexOf(S.step);
+  $('#back').hidden = !S.hist.length || S.step === 'gracias';
+  $('#counter').textContent = i > -1 ? `${i + 1} / ${q.length}` : '';
+  $('#progress').style.opacity = S.step === 'bienvenida' ? 0 : 1;
+  $('#progress i').style.width = (k / (l.length - 1) * 100) + '%';
+}
+function setP(r) { r.style.setProperty('--p', ((r.value - r.min) / (r.max - r.min || 1) * 100) + '%'); }
+function tween(el, to, fmt, ms = 520) {
+  const from = +el.dataset.v || 0; el.dataset.v = to;
+  if (reduced || from === to) { el.textContent = fmt(to); return; }
+  const t0 = performance.now(); cancelAnimationFrame(el._raf);
+  const tick = t => { const p = Math.min((t - t0) / ms, 1); const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(from + (to - from) * e); if (p < 1) el._raf = requestAnimationFrame(tick); };
+  el._raf = requestAnimationFrame(tick);
+}
+function pick(btn, fn) {
+  $$('.tile', btn.parentElement).forEach(b => b.setAttribute('aria-pressed', b === btn));
+  fn(); setTimeout(next, reduced ? 0 : 280);
+}
+
+/* ---------- Pantallas ---------- */
+const VIEWS = {
+  bienvenida() {
+    const T = TEXTOS.bienvenida;
+    const projs = [...groups(units, u => u.proyecto)].map(([name, l]) => ({ name, zona: l[0].zona, n: l.length }));
+    let d = 0;
+    const sky = projs.map(p => {
+      const cols = p.n > 4 ? 3 : 2;
+      const wins = Array.from({ length: p.n }, () => `<i style="--d:${d++}"></i>`).join('');
+      return `<div class="bldg"><div class="facade" style="--cols:${cols}">${wins}</div>
+        <div><b>${esc(p.name)}</b><span>${esc(p.zona)} · ${p.n} ${p.n === 1 ? 'disponible' : 'disponibles'}</span></div></div>`;
+    }).join('');
+    return {
+      html: `<div class="screen">
+        <p class="eyebrow">${esc(T.eyebrow)}</p>
+        <h1>${esc(T.titulo)}</h1>
+        <p class="lead">${esc(T.bajada)}</p>
+        ${ready ? `<div class="skyline" aria-label="${units.length} unidades disponibles">${sky}</div>` : '<p class="loading">Cargando unidades disponibles…</p>'}
+        <ul class="assure">${T.garantias.map(g => `<li>${esc(fill(g, cfg))}</li>`).join('')}</ul>
+        ${ready && demo ? '<p class="demo">Datos de ejemplo · falta conectar el Google Sheet</p>' : ''}
+      </div>`,
+      cta: `<button class="btn" id="start" type="button" ${ready ? '' : 'aria-disabled="true"'}>${esc(T.cta)}</button>`,
+      bind() { $('#start').onclick = () => next(); },
+    };
+  },
+
+  tipo() {
+    const T = TEXTOS.tipo;
+    const g = [...groups(units, u => u.tipologia)].sort((a, b) => ordTipo(a[0]) - ordTipo(b[0]) || a[0].localeCompare(b[0]));
+    const tiles = g.map(([t, l]) => `<button class="tile" type="button" data-v="${esc(t)}" aria-pressed="${S.tipo === t}">
+        ${glyph(t)}<span><span class="t-name">${esc(t)}</span><span class="t-meta">desde ${money(Math.min(...l.map(u => u.precio)))}</span></span></button>`).join('');
+    return {
+      html: `<div class="screen"><h2>${esc(T.titulo)}</h2>
+        <div class="tiles">${tiles}
+          <button class="tile wide" type="button" data-v="*" aria-pressed="${S.tipo === '*'}"><span><span class="t-name">${esc(T.nose)}</span><span class="t-meta">${esc(T.nose_meta)}</span></span></button>
+        </div></div>`,
+      bind() { $$('.tile').forEach(b => b.onclick = () => pick(b, () => {
+        if (S.tipo !== b.dataset.v) { S.zona = null; S.anticipo = null; S.unitId = null; }
+        S.tipo = b.dataset.v;
+        if (zonas().length <= 1) S.zona = '*';
+      })); },
+    };
+  },
+
+  zona() {
+    const T = TEXTOS.zona;
+    const g = [...groups(units.filter(matchT), u => u.zona)];
+    const tiles = g.map(([z, l]) => `<button class="tile" type="button" data-v="${esc(z)}" aria-pressed="${S.zona === z}">
+        <span class="t-name">${esc(z)}</span><span class="t-meta">${l.length} ${l.length === 1 ? 'opción' : 'opciones'} · desde ${money(Math.min(...l.map(u => u.precio)))}</span></button>`).join('');
+    return {
+      html: `<div class="screen"><h2>${esc(T.titulo)}</h2>
+        <div class="tiles">${tiles}
+          <button class="tile wide" type="button" data-v="*" aria-pressed="${S.zona === '*'}"><span><span class="t-name">${esc(T.igual)}</span><span class="t-meta">${esc(T.igual_meta)}</span></span></button>
+        </div></div>`,
+      bind() { $$('.tile').forEach(b => b.onclick = () => pick(b, () => {
+        if (S.zona !== b.dataset.v) { S.anticipo = null; S.unitId = null; }
+        S.zona = b.dataset.v;
+      })); },
+    };
+  },
+
+  uso() {
+    const T = TEXTOS.uso;
+    return {
+      html: `<div class="screen"><h2>${esc(T.titulo)}</h2><div class="tiles">
+        ${T.opciones.map(o => `<button class="tile wide" type="button" data-v="${o.id}" aria-pressed="${S.uso === o.id}">
+          <span><span class="t-name">${esc(o.nombre)}</span><span class="t-meta">${esc(o.meta)}</span></span></button>`).join('')}
+        </div></div>`,
+      bind() { $$('.tile').forEach(b => b.onclick = () => pick(b, () => { S.uso = b.dataset.v; })); },
+    };
+  },
+
+  anticipo() {
+    const T = TEXTOS.anticipo; const p = pool();
+    const lo = Math.min(...p.map(minA)), hi = Math.max(...p.map(maxA));
+    const st = step(hi - lo);
+    const min = Math.ceil(lo / st) * st, max = Math.max(min, Math.floor(hi / st) * st);
+    if (S.anticipo == null) S.anticipo = clamp(Math.ceil(p[0].precio * cfg.anticipo_sugerido_pct / st) * st, min, max);
+    S.anticipo = clamp(S.anticipo, min, max);
+    return {
+      html: `<div class="screen"><h2>${esc(T.titulo)}</h2><p class="lead">${esc(T.bajada)}</p>
+        <div class="value">
+          <label class="big" for="aIn"><span class="cur">${esc(cfg.moneda)}</span><input id="aIn" inputmode="numeric" autocomplete="off" aria-label="Anticipo en ${esc(cfg.moneda)}"></label>
+          <input type="range" id="aR" min="${min}" max="${max}" step="${st}" value="${S.anticipo}" aria-label="Anticipo">
+          <div class="scale"><span>${money(min)}</span><span>${money(max)}</span></div>
+        </div>
+        <p class="sub" id="fit" aria-live="polite"></p></div>`,
+      cta: `<button class="btn" id="go" type="button">Continuar</button>`,
+      bind() {
+        const r = $('#aR'), inp = $('#aIn'), fit = $('#fit');
+        const meas = document.createElement('span');   // mide el ancho del número para ajustar el campo
+        meas.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit;letter-spacing:inherit';
+        inp.parentElement.appendChild(meas);
+        const sync = (fromInput) => {
+          if (!fromInput) inp.value = nf.format(S.anticipo);
+          meas.textContent = inp.value || '0'; inp.style.width = (meas.getBoundingClientRect().width + 6) + 'px';
+          r.value = S.anticipo; setP(r);
+          const ok = p.filter(u => S.anticipo >= minA(u)).length;
+          const what = S.tipo && S.tipo !== '*' ? S.tipo.toLowerCase() : 'unidades';
+          fit.innerHTML = ok === p.length
+            ? `Te alcanza para <b>todas las opciones</b> (${p.length}).`
+            : ok ? `Te alcanza para <b>${ok} de ${p.length}</b> opciones de ${esc(what)}.`
+                 : `El anticipo mínimo arranca en <b>${money(lo)}</b>.`;
+        };
+        r.oninput = () => { S.anticipo = +r.value; sync(); };
+        inp.oninput = () => { const v = parseInt(inp.value.replace(/\D/g, '') || '0', 10); inp.value = v ? nf.format(v) : '';
+          S.anticipo = clamp(v, min, max); sync(true); };
+        inp.onblur = () => sync();
+        inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
+        sync();
+        $('#go').onclick = () => { inp.blur(); next(); };
+      },
+    };
+  },
+
+  plazo() {
+    const T = TEXTOS.plazo; const p = pool();
+    const st = cfg.plazo_paso, min = cfg.plazo_min, max = Math.max(min, plazoMax(p));
+    if (S.plazo == null) S.plazo = cfg.plazo_sugerido;
+    S.plazo = clamp(Math.round((S.plazo - min) / st) * st + min, min, max);
+    return {
+      html: `<div class="screen"><h2>${esc(T.titulo)}</h2>
+        <div class="value">
+          <div class="big"><span id="nV"></span><span class="cur">cuotas</span></div>
+          <input type="range" id="nR" min="${min}" max="${max}" step="${st}" value="${S.plazo}" aria-label="Cantidad de cuotas">
+          <div class="scale"><span>${years(min)}</span><span>${years(max)}</span></div>
+        </div>
+        <p class="sub" id="nT" aria-live="polite"></p></div>`,
+      cta: `<button class="btn" id="go" type="button">${esc(T.cta)}</button>`,
+      bind() {
+        const r = $('#nR');
+        const sync = () => { $('#nV').textContent = S.plazo; setP(r);
+          $('#nT').innerHTML = `${years(S.plazo)} · terminás de pagar en <b>${endDate(S.plazo)}</b>`; };
+        r.oninput = () => { S.plazo = +r.value; sync(); };
+        sync();
+        $('#go').onclick = () => next();
+      },
+    };
+  },
+
+  resultado() {
+    const T = TEXTOS.resultado; const p = pool(); const u = featured();
+    S.unitId = u.id;
+    const others = p.filter(x => x !== u);
+    const st = cfg.plazo_paso, nMin = cfg.plazo_min, nMax = Math.max(nMin, rules(u).maxN);
+    const aMin = minA(u), aMax = maxA(u), aSt = step(aMax - aMin);
+    const r12 = v => clamp(Math.round(v / 12) * 12, nMin, nMax);   // tres plazos para comparar: 1/3, 2/3 y el máximo
+    const alts = [...new Set([r12(nMax / 3), r12(nMax * 2 / 3), nMax])];
+    return {
+      html: `<div class="screen">
+        <p class="eyebrow">${esc(T.eyebrow)}</p>
+        <h2>${esc(T.titulos[S.uso] || T.titulos.otro)}</h2>
+        <section class="hero" id="hero">
+          <div><span class="u-title">${esc(unitName(u))}</span>
+               <span class="u-meta">${esc(u.tipologia)}${m2txt(u)} · ${esc(u.zona)}${u.entrega ? ` · Entrega ${esc(u.entrega)}` : ''}</span></div>
+          <div><div class="cuota" aria-live="polite"><span class="cur">${esc(cfg.moneda)}</span><span id="cV">0</span></div>
+               <p class="per">por mes · <span id="cN"></span></p></div>
+          <dl class="facts"><div><dt>Anticipo</dt><dd id="fA"></dd></div><div><dt>Plazo</dt><dd id="fN"></dd></div><div><dt>Precio</dt><dd>${money(u.precio)}</dd></div></dl>
+          <p class="note" id="note" hidden></p>
+        </section>
+        <section class="adjust" aria-label="Ajustar simulación">
+          <p class="eyebrow">Ajustá y compará</p>
+          <div class="ctl"><div class="ctl-head"><label for="rA">Anticipo</label><output id="oA" for="rA"></output></div>
+            <input type="range" id="rA" min="${aMin}" max="${aMax}" step="${aSt}"></div>
+          <div class="ctl"><div class="ctl-head"><label for="rN">Plazo</label><output id="oN" for="rN"></output></div>
+            <input type="range" id="rN" min="${nMin}" max="${nMax}" step="${st}"></div>
+          <div class="alts" id="alts">${alts.map(n => `<button class="alt" type="button" data-n="${n}"><span>${n} cuotas</span><b></b></button>`).join('')}</div>
+        </section>
+        <details class="detail"><summary>Detalle del cálculo ${chev}</summary><dl class="rows" id="rows"></dl></details>
+        ${others.length ? `<section class="others"><p class="eyebrow">Otras opciones (${others.length})</p>
+          <div class="units">${others.map(x => `<button class="unit" type="button" data-id="${esc(x.id)}">
+            <span class="n">${esc(unitName(x))}</span><span class="m">${esc(x.tipologia)}${m2txt(x)} · ${esc(x.zona)}</span>
+            <span class="c" data-c></span></button>`).join('')}</div></section>` : ''}
+        <p class="fine">${esc(fill(T.legal, { moneda: cfg.moneda, metodo: cfg.metodo === 'frances' ? 'sistema francés' : 'interés directo sobre el saldo' }))}${demo ? ' Datos de ejemplo.' : ''}</p>
+      </div>`,
+      cta: `<button class="btn" id="go" type="button">${esc(T.cta)}</button>`,
+      bind() {
+        const rA = $('#rA'), rN = $('#rN');
+        // Avisos si la unidad tiene reglas distintas a lo que eligió la persona
+        const notes = [];
+        if (S.anticipo != null && S.anticipo < aMin) notes.push(`Esta unidad pide un anticipo mínimo de ${money(aMin)}.`);
+        if (S.plazo != null && S.plazo > nMax) notes.push(`Esta unidad se financia hasta en ${nMax} cuotas.`);
+        if (notes.length) { $('#note').textContent = notes.join(' '); $('#note').hidden = false; }
+        S.anticipo = clamp(S.anticipo ?? aMin, aMin, aMax);
+        S.plazo = clamp(S.plazo ?? cfg.plazo_sugerido, nMin, nMax);
+        rA.value = S.anticipo; rN.value = S.plazo;
+        const upd = () => {
+          const c = calc(u, S.anticipo, S.plazo);
+          tween($('#cV'), Math.round(c.cuota), v => nf.format(Math.round(v)));
+          $('#cN').textContent = `${c.N} cuotas fijas · ${years(c.N)}`;
+          $('#fA').textContent = money(c.A); $('#fN').textContent = `${c.N} meses`;
+          $('#oA').textContent = money(S.anticipo); $('#oN').textContent = `${S.plazo} cuotas`;
+          setP(rA); setP(rN);
+          $$('.alt').forEach(b => { const n = +b.dataset.n; b.setAttribute('aria-pressed', n === S.plazo);
+            $('b', b).textContent = money(calc(u, S.anticipo, n).cuota); });
+          const rows = [['Precio de contado', money(u.precio)], ['Anticipo', money(c.A)], ['Saldo a financiar', money(c.saldo)],
+            ['Cuotas', `${c.N} × ${money(c.cuota)}`], ['Interés total', money(c.interes)], ['Total a pagar', money(c.total)]];
+          if (cfg.mostrar_tasas !== 'no') rows.push(['Tasa nominal anual', pf(c.tna)], ['Tasa efectiva anual (TEA)', pf(c.tea)]);
+          $('#rows').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+          $$('.unit').forEach(b => { const x = p.find(y => y.id === b.dataset.id); const cx = calc(x, S.anticipo, S.plazo);
+            $('[data-c]', b).innerHTML = `${money(cx.cuota)}<small>${cx.subeA ? 'anticipo ' + money(cx.A) : 'por mes'}</small>`; });
+        };
+        rA.oninput = () => { S.anticipo = +rA.value; upd(); };
+        rN.oninput = () => { S.plazo = +rN.value; upd(); };
+        $$('.alt').forEach(b => b.onclick = () => { S.plazo = +b.dataset.n; rN.value = S.plazo; upd(); });
+        $$('.unit').forEach(b => b.onclick = async () => {
+          S.unitId = b.dataset.id; window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+          await wait(reduced ? 0 : 220); const prev = +$('#cV').dataset.v || 0; const v = VIEWS.resultado(); $('#stage').innerHTML = v.html;
+          $('#cV').dataset.v = prev;
+          $$('.screen > *').forEach(el => el.style.animation = 'none'); $('#hero').classList.add('swap'); v.bind();
+        });
+        upd();
+        $('#go').onclick = () => next();
+      },
+    };
+  },
+
+  captura() {
+    const T = TEXTOS.captura; const u = featured(); const c = calc(u, S.anticipo, S.plazo);
+    return {
+      html: `<div class="screen">
+        <p class="eyebrow">${esc(T.eyebrow)}</p>
+        <h2>${esc(fill(T.titulo, { proyecto: u.proyecto }))}</h2>
+        <div class="summary"><div class="s-unit"><b>${esc(unitName(u))}</b>${c.N} cuotas · anticipo ${money(c.A)}</div><div class="s-cuota">${money(c.cuota)}</div></div>
+        <div class="field"><label for="nom">¿Cómo te llamás?</label>
+          <input id="nom" autocomplete="given-name" placeholder="Tu nombre" value="${esc(S.nombre)}" aria-describedby="nomErr">
+          <p class="err" id="nomErr" hidden>Escribí tu nombre para que sepamos a quién responder.</p></div>
+        <div class="field"><span class="help" id="segL">¿Por dónde preferís recibirla?</span>
+          <div class="seg" role="group" aria-labelledby="segL">
+            <button type="button" data-c="whatsapp" aria-pressed="${S.canal === 'whatsapp'}">${waIcon} WhatsApp</button>
+            <button type="button" data-c="email" aria-pressed="${S.canal === 'email'}">Email</button></div></div>
+        <div class="field" id="mailF" ${S.canal === 'email' ? '' : 'hidden'}><label for="mail">Tu email</label>
+          <input id="mail" type="email" inputmode="email" autocomplete="email" placeholder="nombre@email.com" value="${esc(S.email)}" aria-describedby="mailErr">
+          <p class="err" id="mailErr" hidden>Revisá el email: parece incompleto.</p></div>
+        <p class="help" id="ayuda"></p>
+        <p class="fine">${esc(T.privacidad)}</p>
+      </div>`,
+      cta: `<a class="btn" id="go" href="#" target="_blank" rel="noopener">${esc(T.cta)}</a>`,
+      bind() {
+        const go = $('#go'), nom = $('#nom'), mail = $('#mail');
+        const upd = () => {
+          const wa = S.canal === 'whatsapp';
+          $('#mailF').hidden = wa;
+          $('#ayuda').textContent = wa ? (bot() ? T.ayuda_wa_bot : T.ayuda_wa) : T.ayuda_mail;
+          go.innerHTML = (wa ? waIcon + ' ' : '') + esc(T.cta);
+          if (wa) { go.href = waLink(TEXTOS.whatsapp); go.target = '_blank'; go.removeAttribute('role'); } else { go.removeAttribute('href'); go.removeAttribute('target'); go.setAttribute('role', 'button'); go.tabIndex = 0; }
+          $$('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === S.canal));
+        };
+        nom.oninput = () => { S.nombre = nom.value.trim(); nom.removeAttribute('aria-invalid'); $('#nomErr').hidden = true; upd(); };
+        mail.oninput = () => { S.email = mail.value.trim(); mail.removeAttribute('aria-invalid'); $('#mailErr').hidden = true; };
+        $$('.seg button').forEach(b => b.onclick = () => { S.canal = b.dataset.c; upd(); if (S.canal === 'email') mail.focus(); });
+        go.onclick = e => {
+          let ok = true;
+          if (S.nombre.length < 2) { ok = false; nom.setAttribute('aria-invalid', 'true'); $('#nomErr').hidden = false; nom.focus(); }
+          if (S.canal === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(S.email)) {
+            if (ok) mail.focus(); ok = false; mail.setAttribute('aria-invalid', 'true'); $('#mailErr').hidden = false; }
+          if (!ok || S.canal === 'email') e.preventDefault();
+          if (!ok) return;
+          sendLead();
+          setTimeout(() => go_('gracias'), S.canal === 'whatsapp' ? 350 : 0);
+        };
+        go.onkeydown = e => { if (e.key === 'Enter' && S.canal === 'email') go.click(); };
+        upd();
+      },
+    };
+  },
+
+  gracias() {
+    const T = TEXTOS.gracias; const wa = S.canal === 'whatsapp';
+    const agenda = cfg.agenda_url || waLink(TEXTOS.whatsapp_agenda);
+    const u = featured(); const o = obra(u);
+    return {
+      html: `<div class="screen">
+        <div class="check" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <h1>${esc(fill(T.titulo, { nombre: S.nombre.split(' ')[0] }))}</h1>
+        <p class="lead">${esc(fill(wa ? (bot() ? T.texto_wa_bot : T.texto_wa) : T.texto_mail, { email: S.email }))}</p>
+        ${o.ficha ? `<a class="file" href="${esc(o.ficha)}" target="_blank" rel="noopener" id="ficha">
+          <svg width="28" height="34" viewBox="0 0 28 34" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M1 1h18l8 8v24H1z"/><path d="M19 1v8h8"/><path d="M7 19h14M7 24h14M7 14h6"/></svg>
+          <span><b>${esc(fill(T.ficha, { proyecto: u.proyecto }))}</b><small>PDF · se abre en otra pestaña</small></span></a>` : ''}
+        ${wa ? `<p class="fine">¿No se abrió WhatsApp? <a class="textlink" href="${esc(waLink(TEXTOS.whatsapp))}" target="_blank" rel="noopener">Abrilo acá</a>.</p>` : ''}
+        <section class="next"><p class="eyebrow">Próximo paso</p><h3>${esc(T.proximo_titulo)}</h3><p>${esc(T.proximo_texto)}</p></section>
+        <div class="links"><button class="textlink" type="button" id="again">Hacer otra simulación</button>
+          ${o.web ? `<a class="textlink" href="${esc(o.web)}" target="_blank" rel="noopener">Ver ${esc(u.proyecto)} en la web</a>` : ''}</div>
+      </div>`,
+      cta: `<a class="btn" href="${esc(agenda)}" target="_blank" rel="noopener" id="agenda">${esc(T.cta)}</a>`,
+      bind() {
+        $('#again').onclick = () => { Object.assign(S, { tipo: null, zona: null, uso: S.uso, anticipo: null, plazo: null, unitId: null }); S.hist = ['bienvenida']; go('tipo', false); };
+        $('#agenda').addEventListener('click', () => sendEvent('agenda'));
+        $('#ficha')?.addEventListener('click', () => sendEvent('ficha'));
+      },
+    };
+  },
+};
+const go_ = s => go(s);
+const bot = () => norm(cfg.whatsapp_bot) === 'si';
+
+/* ---------- Salidas: WhatsApp y registro del contacto ---------- */
+function simLink(u) {
+  if (!cfg.app_url) return '';
+  const q = new URLSearchParams({ u: u.id, a: S.anticipo, n: S.plazo }); if (S.origen) q.set('src', S.origen);
+  return `${cfg.app_url.replace(/[?#].*$/, '')}?${q}`;
+}
+function waLink(tpl) {
+  const u = featured(); const c = calc(u, S.anticipo, S.plazo);
+  let msg = fill(tpl, { empresa: cfg.empresa, nombre: S.nombre || '', proyecto: u.proyecto, unidad: u.unidad, tipologia: u.tipologia,
+                        anticipo: money(c.A), plazo: c.N, cuota: money(c.cuota) });
+  const l = simLink(u); if (l && tpl === TEXTOS.whatsapp) msg += `\n${l}`;
+  msg += `\nCódigo: ${tpl === TEXTOS.whatsapp ? obra(u).codigo : TEXTOS.codigo_asesor}`;
+  return `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(msg)}`;
+}
+function leadData() {
+  const u = featured(); const c = calc(u, S.anticipo, S.plazo);
+  return { nombre: S.nombre, canal: S.canal, email: S.canal === 'email' ? S.email : '', tipologia: S.tipo === '*' ? 'Sin definir' : S.tipo,
+    zona: S.zona === '*' ? 'Cualquiera' : S.zona, uso: S.uso, proyecto: u.proyecto, unidad: u.unidad, precio: u.precio,
+    anticipo: Math.round(c.A), plazo: c.N, cuota: Math.round(c.cuota), moneda: cfg.moneda, origen: S.origen, link: simLink(u),
+    codigo: obra(u).codigo, ficha: obra(u).ficha,
+    opciones: pool().slice(0, 8).map(x => { const cx = calc(x, S.anticipo, S.plazo);
+      return { nombre: unitName(x), tipologia: x.tipologia, precio: x.precio, anticipo: Math.round(cx.A), plazo: cx.N, cuota: Math.round(cx.cuota) }; }) };
+}
+function post(body) {
+  if (!CONEXION.LEADS_URL) { console.info('[simulador] Contacto (sin LEADS_URL configurada):', body); return; }
+  try { fetch(CONEXION.LEADS_URL, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).catch(() => {}); } catch (e) {}
+}
+const sendLead = () => post({ tipo: 'lead', ...leadData() });
+const sendEvent = ev => post({ tipo: 'evento', evento: ev, nombre: S.nombre, origen: S.origen });
+
+/* ---------- Arranque ---------- */
+$('#back').onclick = back;
+(async () => {
+  paint();
+  await load();
+  // Links desde redes: ?src=reel-tigre  ·  link a una simulación: ?u=ID&a=30000&n=48
+  try {
+    const q = new URLSearchParams(location.search);
+    S.origen = (q.get('src') || q.get('utm_campaign') || '').slice(0, 60);
+    const u = units.find(x => x.id === q.get('u'));
+    if (u) { Object.assign(S, { tipo: u.tipologia, zona: u.zona, unitId: u.id, anticipo: +q.get('a') || null, plazo: +q.get('n') || null });
+      S.hist = ['bienvenida']; S.step = 'resultado'; }
+  } catch (e) {}
+  if (S.step === 'bienvenida') {
+    // Reemplaza solo el contenido de carga sin repetir la animación de entrada
+    const v = VIEWS.bienvenida(); $('#stage').innerHTML = v.html; $('#bar').innerHTML = v.cta;
+    $$('.screen > *').forEach((el, i) => { el.style.setProperty('--i', i); if (i < 3) el.style.animation = 'none'; });
+    v.bind();
+  } else paint();
+})();
+})();
+</script>
+
+</body>
+</html>
